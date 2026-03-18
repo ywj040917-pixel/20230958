@@ -1,0 +1,97 @@
+# @title 🔗 연결리스트 끝말잇기 센터 { run: "auto" }
+import IPython
+from IPython.display import HTML, display, clear_output
+
+# 1. 연결리스트 노드 정의
+class WordNode:
+    def __init__(self, word):
+        self.word = word
+        self.next = None
+
+# 2. 게임 관리 클래스
+class WordChainGame:
+    def __init__(self):
+        self.head = WordNode("기차") # 시작 단어
+        self.history = ["기차"]
+        self.msg = "첫 단어는 '기차'입니다. 끝말을 이어보세요!"
+        self.msg_color = "#2ecc71"
+
+    def add_word(self, new_word):
+        if not new_word or len(new_word) < 2:
+            self.msg = "⚠️ 두 글자 이상 입력해주세요!"
+            self.msg_color = "#e67e22"
+            return
+
+        if new_word in self.history:
+            self.msg = f"🚫 '{new_word}'는 이미 사용한 단어입니다!"
+            self.msg_color = "#e74c3c"
+            return
+
+        # 마지막 노드 찾기 (Traversal)
+        curr = self.head
+        while curr.next:
+            curr = curr.next
+        
+        # 규칙 검사 (연결리스트의 데이터 검증)
+        if curr.word[-1] == new_word[0]:
+            curr.next = WordNode(new_word) # 새 노드 연결 (Link)
+            self.history.append(new_word)
+            self.msg = f"✅ '{new_word}' 연결 성공!"
+            self.msg_color = "#2ecc71"
+        else:
+            self.msg = f"❌ 틀렸습니다! '{curr.word[-1]}'로 시작해야 합니다."
+            self.msg_color = "#e74c3c"
+
+    def render(self):
+        clear_output()
+        
+        # 기차(연결리스트) 시각화 HTML 생성
+        train_html = ""
+        curr = self.head
+        while curr:
+            train_html += f'<div style="min-width:60px; padding:10px; background:white; border:2px solid #3498db; border-radius:15px; text-align:center; font-weight:bold;">{curr.word}</div>'
+            if curr.next:
+                train_html += '<div style="margin:0 5px; color:#3498db; font-weight:bold;">➡</div>'
+            curr = curr.next
+
+        # 전체 레이아웃
+        display(HTML(f"""
+        <div style="padding:20px; background:#f8f9fa; border-radius:15px; border:1px solid #ddd; font-family:sans-serif;">
+            <h2 style="color:#2c3e50; margin-top:0;">🧩 끝말잇기 연결리스트</h2>
+            <p style="color:{self.msg_color}; font-weight:bold; height:20px;">{self.msg}</p>
+            
+            <div style="display:flex; align-items:center; overflow-x:auto; padding:15px 0; margin:10px 0;">
+                {train_html}
+            </div>
+
+            <div style="margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+                <input type="text" id="word_input" style="padding:8px; border-radius:5px; border:1px solid #ccc;" placeholder="단어 입력">
+                <button onclick="send_word()" style="padding:8px 15px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">연결하기</button>
+            </div>
+        </div>
+
+        <script>
+            function send_word() {{
+                var val = document.getElementById('word_input').value;
+                google.colab.kernel.invokeFunction('notebook.add_word_js', [val], {{}});
+                document.getElementById('word_input').value = '';
+            }}
+            // 엔터키 지원
+            document.getElementById('word_input').onkeydown = function(e){{
+               if(e.keyCode == 13) send_word();
+            }};
+        </script>
+        """))
+
+# 3. 게임 인스턴스 생성 및 파이썬-자바스크립트 연결
+game = WordChainGame()
+
+def add_word_js(new_word):
+    game.add_word(new_word)
+    game.render()
+
+from google.colab import output
+output.register_callback('notebook.add_word_js', add_word_js)
+
+# 초기 화면 렌더링
+game.render()
